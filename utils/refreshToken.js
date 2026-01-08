@@ -28,6 +28,10 @@ async function getToken (data) {
     return token;
 }
 
+async function deleteToken (id) {
+    return await RefreshToken.findOneAndDelete({ user_id: id });
+}
+
 function generateRefreshToken(user) {
     return jwt.sign(user, process.env.REFRESH_TOKEN_SECRET);
 }
@@ -36,4 +40,5 @@ module.exports = {
     save: saveToken,
     get: getToken,
     generateRefreshToken: generateRefreshToken,
+    delete: deleteToken
 };

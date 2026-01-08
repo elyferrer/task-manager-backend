@@ -3,13 +3,16 @@ const router = express.Router();
 
 const Task = require('../models/task');
 
-router.get('/', async (req, res) => {
-    const tasks = await Task.find({});
+const accessTokenUtil = require('../utils/accessToken');
+
+router.get('/', accessTokenUtil.authenticateToken, async (req, res) => {
+    const user = req.user;
+    const tasks = await Task.find({ created_by: user.id });
 
     res.json(tasks)
 });
 
-router.post('/', async (req, res) => {
+router.post('/', accessTokenUtil.authenticateToken, async (req, res) => {
     const { 
         title, 
         details, 
@@ -18,8 +21,17 @@ router.post('/', async (req, res) => {
         status
     } = req.body;
 
+    const { id } = req.user;
+
     try {
-        const newTask = new Task({ title, details, start_date, end_date, status });
+        const newTask = new Task({ 
+            title, 
+            details, 
+            start_date, 
+            end_date, 
+            status, 
+            created_by: id
+        });
         await newTask.save();
         res.status(201).json(newTask);
     } catch (error) {
@@ -28,36 +40,50 @@ router.post('/', async (req, res) => {
     }
 });
 
-router.put('/:id', async (req, res) => {
+router.patch('/:id', accessTokenUtil.authenticateToken, async (req, res) => {
     try {
-        const id = req.params.id;
-        const updateData = req.body;
+        const userId = req.user.id;
+        const taskId = req.params.id;
 
-        const updatedTask = await Task.findByIdAndUpdate(id, updateData, {
-            new: true,
-            runValidators: true
-        });
+        const validateTask = await Task.findOne({ _id: taskId, created_by: userId });
+        
+        if (validateTask) {
+            const updateResult = await Task.updateOne(
+                { _id: taskId },
+                { $set: req.body }
+            );
 
-        if (!updatedTask) {
-            return res.status(404).json({ message: "Not Found"})
+            if (updateResult.modifiedCount === 0) {
+                return res.status(404).send('No changes were made');
+            }
+
+            res.status(200).json({ message: 'Task updated successfully' });
         }
 
-        res.status(200).json(updatedTask);
+        return res.status(404).send('Task not found');
     } catch (error) {
-        res.status(500).json({ error: "Unable to update the task", details: error.message })
+        res.status(400).send(error.message);
     }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', accessTokenUtil.authenticateToken, async (req, res) => {
     try {
-        const { id } = req.params;
-        const deletedTask = await Task.findByIdAndDelete(id);
+        const userId = req.user.id;
+        const taskId = req.params.id;
 
-        if (!deletedTask) {
-            return res.status(404).json({ message: "Not Found" });
+        const validateTask = await Task.findOne({ _id: taskId, created_by: userId });
+        
+        if (validateTask) {
+            const deletedTask = await Task.findByIdAndDelete(taskId);
+
+            if (!deletedTask) {
+                return res.status(404).json({ message: "Not Found" });
+            }
+
+            res.status(200).json({ message: 'Task deleted successfully' });
         }
 
-        res.status(200).json({ message: "Task successfully deleted", deletedTask });
+        res.status(404).json({ message: 'Task not found' });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

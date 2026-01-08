@@ -21,37 +21,41 @@ router.post('/login', async (req, res) => {
     // get user
     const userDetails = await User.findOne({ username: username, is_active: true }); 
 
+    res.send({userDetails});
     if (userDetails) {
         const matched = await bcrypt.compareSync(password, userDetails.password);
         if (!matched) {
             res.sendStatus(401);
         }
+        
+    
+        const user = { name: username, id: userDetails._id.toString() };
+
+        const accessToken = accessTokenUtil.generateAccessToken(user);
+        const refreshToken = refreshTokenUtil.generateRefreshToken(user);
+        
+        await refreshTokenUtil.save({
+            user_id: userDetails._id.toString(),
+            expires_at: null,
+            token: refreshToken
+        });
+
+        res.json({ accessToken, refreshToken });
     }
-    
-    const user = { name: username, id: userDetails._id.toString() };
 
-    const accessToken = accessTokenUtil.generateAccessToken(user);
-    const refreshToken = refreshTokenUtil.generateRefreshToken(user);
-    
-    refreshTokenUtil.save({
-        user_id: '695f6beb59f1bd69589f44af',
-        expires_at: null,
-        token: refreshToken
-    });
-
-    res.json({ accessToken, refreshToken });
+    res.status(404).json({ message: "User not found" });
 });
 
 router.post('/token', async (req, res) => {
     const user = await User.findOne({ username: req.body.username });
     const token = await RefreshToken.findOne({ user_id: user._id.toString() });
-    const refreshToken = token.token;
+    const refreshToken = token ? token.token : null;
 
-    if (refreshToken == null) return res.sendStatus(403);
+    if (!refreshToken) return res.sendStatus(403);
     
     jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
         if (err) return res.sendStatus(403);
-        const accessToken = accessTokenUtil.generateAccessToken({ name: user.name });
+        const accessToken = accessTokenUtil.generateAccessToken({ name: user.name, id: user.id });
         res.json({ accessToken });
     })
 });
@@ -118,16 +122,30 @@ router.put('/', accessTokenUtil.authenticateToken, async (req, res) => {
     }
 });
 
-router.delete('/:id', async (req, res) => {
+router.put('/deactivate', accessTokenUtil.authenticateToken, async (req, res) => {
     try {
-        const { id } = req.params;
-        const deletedChar = await Character.findByIdAndDelete(id);
+        const id = req.user.id;
 
-        if (!deletedChar) {
-            return res.status(404).json({ message: "Not Found" });
+        const updatedData = await User.findByIdAndUpdate(id, { is_active: false }, {
+            new: true,
+            runValidators: true
+        });
+
+        if (!updatedData) {
+            return res.status(404).json({ message: "Not Found"})
         }
 
-        res.status(200).json({ message: "Character deleted successfully", deletedChar });
+        res.status(200).json(updatedData);
+    } catch (error) {
+        res.status(500).json({ error: "Unable to update the user", details: error.message })
+    }
+});
+
+router.delete('/logout', accessTokenUtil.authenticateToken, async (req, res) => {
+    try {
+        const id = req.user.id;
+        refreshTokenUtil.delete(id);
+        res.status(200).json({ message: "Logged out successfully" });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

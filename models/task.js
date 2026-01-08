@@ -20,7 +20,7 @@ const taskSchema = new mongoose.Schema({
     },
     finished_date: {
         type: Date,
-        required: false
+        default: null
     },
     status: {
         type: Number,
@@ -32,7 +32,7 @@ const taskSchema = new mongoose.Schema({
     },
     updated_at: {
         type: Date,
-        required: false
+        default: null
     },
     created_by: {
         type: String,
@@ -40,7 +40,7 @@ const taskSchema = new mongoose.Schema({
     },
     updated_by: {
         type: String,
-        required: false
+        default: null
     }
 });
 
