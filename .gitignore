@@ -1,0 +1,70 @@
+# npm
+node_modules
+package-lock.json
+npm-shrinkwrap.json
+*.log
+*.gz
+/npm-debug.log*
+
+# Yarn
+# yarn-error.log
+# yarn.lock
+
+# Coveralls
+.nyc_output
+coverage
+
+# Benchmarking
+benchmarks/graphs
+
+# Dependencies
+# vendor/
+
+# Optional bundle product in npm package
+# *.js
+# *.mjs
+# *.cjs
+# *.ts
+# *.mts
+# *.cts
+# *.d.ts
+
+# Optional npm cache files
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional REPL history
+.node_repl_history
+
+# Environment variables
+.env
+.env.development.local
+.env.test.local
+.env.production.local
+.env.local
+
+# TypeScript cache
+.tsbuildinfo
+
+# Next.js
+.next
+out
+
+# Nuxt.js
+.nuxt
+.output
+
+# Gatsby
+.cache
+/public
+
+# Vuepress
+.vuepress/dist
+
+# Storybook
+.storybook-static
+
+# other common ignore files/folders
+temp/
