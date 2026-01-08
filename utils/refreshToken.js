@@ -13,7 +13,6 @@ const saveToken = async (data) => {
     try {
         const newRefreshToken = new RefreshToken({ user_id, token, expires_at });
         await newRefreshToken.save();
-        console.log('Saved');
     } catch (error) {
         console.log(error.message);
     }
