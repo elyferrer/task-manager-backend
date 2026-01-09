@@ -7,6 +7,18 @@ const RefreshToken = require('../models/refreshToken');
 const accessTokenUtil = require('../utils/accessToken');
 const refreshTokenUtil = require('../utils/refreshToken');
 
+exports.get = async (req, res) => {
+    try {
+        const id = req.user.id;
+
+        const userDetails = await User.findOne({ _id: id });
+
+        res.status(200).json(userDetails);
+    } catch (error) {
+        res.status(500).json({ error: "Unable to fetch the user", details: error.message })
+    }
+};
+
 exports.login = async (req, res) => {
     const { username, password } = req.body;
 
@@ -20,16 +32,10 @@ exports.login = async (req, res) => {
     
         const user = { name: username, id: userDetails._id.toString() };
 
-        const accessToken = accessTokenUtil.generateAccessToken(user);
-        const refreshToken = refreshTokenUtil.generateRefreshToken(user);
+        const accessToken = accessTokenUtil.generateAccessToken(res, user);
+        const refreshToken = refreshTokenUtil.generateRefreshToken(res, user);
         
-        await refreshTokenUtil.save({
-            user_id: userDetails._id.toString(),
-            expires_at: null,
-            token: refreshToken
-        });
-
-        res.json({ accessToken, refreshToken });
+        res.json({ username });
     }
 
     res.status(404).json({ message: "User not found" });
@@ -44,7 +50,8 @@ exports.generateNewToken = async (req, res) => {
     
     jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
         if (err) return res.sendStatus(403);
-        const accessToken = accessTokenUtil.generateAccessToken({ name: user.name, id: user.id });
+        const accessToken = accessTokenUtil.generateAccessToken(res, { name: user.name, id: user.id });
+
         res.json({ accessToken });
     });
 };
@@ -133,7 +140,10 @@ exports.deactivate = async (req, res) => {
 exports.logout = async (req, res) => {
     try {
         const id = req.user.id;
-        refreshTokenUtil.delete(id);
+
+        res.clearCookie('refreshToken');
+        res.clearCookie('accessToken');
+
         res.status(200).json({ message: "Logged out successfully" });
     } catch (error) {
         res.status(500).json({ message: error.message });

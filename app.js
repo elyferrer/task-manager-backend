@@ -3,6 +3,7 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 
 const userRoutes = require('./routes/user');
 const taskRoutes = require('./routes/task');
@@ -12,25 +13,19 @@ const app = express();
 const PORT = process.env.PORT;
 const CONN = process.env.MONGO_URI;
 
-app.use(cors());
 app.use(express.json());
+app.use(cookieParser());
+// app.use(cors());
+
+app.use(cors({
+    origin: 'http://localhost:5173', // Your frontend origin
+    credentials: true, // This enables Access-Control-Allow-Credentials: true
+    // methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allowed methods
+    // allowedHeaders: ['Origin', 'X-XSRF-TOKEN', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'] // Allowed headers
+}));
+
 app.use('/tasks', taskRoutes);
 app.use('/user', userRoutes);
-
-// const tasks = [
-//     { username: 'jollycasfer', title: 'Task 1' },
-//     { username: 'Yuvin', title: 'Task 2' },
-//     { username: 'Mau', title: 'Task 3' },
-//     { username: 'jollycasfer', title: 'Task 4' },
-//     { username: 'jollycasfer', title: 'Task 5' },
-//     { username: 'jollycasfer', title: 'Task 6' },
-//     { username: 'Yuvin', title: 'Task 7' },
-//     { username: 'Mau', title: 'Task 8' }
-// ];
-
-// app.get('/tasks', accessTokenUtil.authenticateToken, (req, res) => {
-//     res.send(tasks.filter(task => task.username === req.user.name ));
-// });
 
 mongoose.connect(CONN)
     .then(() => console.log('MongoDB connected'))

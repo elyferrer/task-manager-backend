@@ -1,18 +1,37 @@
 const jwt = require('jsonwebtoken');
 
-function generateAccessToken(user) {
-    return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '5m' });
+const RefreshToken = require('../models/refreshToken');
+
+function generateAccessToken(res, user) {
+    const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '30s' });
+
+    res.cookie('accessToken', accessToken, {
+        httpOnly: true,
+        secure: true,
+        maxAge: 3600000,
+        sameSite: 'None'
+    });
+
+    return accessToken;
 }
 
-function authenticateToken(req, res, nex) {
-    const header = req.headers['authorization'];
-    const token = header && header.split(' ')[1];
-    if (token === null) return res.sendStatus(401);
+async function authenticateToken(req, res, next) {
+    const httpToken = req.cookies.accessToken;
 
-    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
-        if (err) return res.sendStatus(403);
-        req.user = user;
-        nex();
+    jwt.verify(httpToken, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
+        if (err)  {
+            const refreshToken = req.cookies.refreshToken;
+            
+            jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (errRef, userRef) => {
+                if (errRef) res.sendStatus(403);
+                generateAccessToken(res, { name: userRef.name, id: userRef.id });
+                req.user = userRef;
+                next();
+            })
+        } else {
+            req.user = user;
+            next();
+        }
     })
 };
 

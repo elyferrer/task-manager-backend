@@ -3,6 +3,19 @@ const jwt = require('jsonwebtoken');
 const RefreshToken = require('../models/refreshToken');
 const User = require('../models/user');
 
+function generateRefreshToken(res, user) {
+    const refreshToken = jwt.sign(user, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '1d' });
+
+    res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: true,
+        maxAge: 24 * 60 * 60 * 1000,
+        sameSite: 'None'
+    });
+
+    return refreshToken;
+}
+
 const saveToken = async (data) => {
     const { 
         user_id, 
@@ -29,10 +42,6 @@ async function getToken (data) {
 
 async function deleteToken (id) {
     return await RefreshToken.findOneAndDelete({ user_id: id });
-}
-
-function generateRefreshToken(user) {
-    return jwt.sign(user, process.env.REFRESH_TOKEN_SECRET);
 }
 
 module.exports = {
