@@ -69,7 +69,7 @@ exports.delete = async (req, res) => {
                 return res.status(404).json({ message: "Not Found" });
             }
 
-            res.status(200).json({ message: 'Task deleted successfully' });
+            res.status(200).json(validateTask);
         }
 
         res.status(404).json({ message: 'Task not found' });
