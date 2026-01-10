@@ -14,12 +14,14 @@ const userSchema = new mongoose.Schema({
     middle_name: {
         type: String,
         required: false,
-        maxLength: 100
+        maxLength: 100,
+        default: null
     },
     nickname: {
         type: String,
         required: false,
-        maxLength: 50
+        maxLength: 50,
+        default: null
     },
     username: {
         type: String,

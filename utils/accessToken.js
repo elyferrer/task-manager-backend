@@ -21,13 +21,18 @@ async function authenticateToken(req, res, next) {
     jwt.verify(httpToken, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
         if (err)  {
             const refreshToken = req.cookies.refreshToken;
+
+            if (refreshToken) {
+                jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (errRef, userRef) => {
+                    if (errRef) res.sendStatus(403);
+                    generateAccessToken(res, { name: userRef.name, id: userRef.id });
+                    req.user = userRef;
+                    next();
+                })
+            } else {
+                res.sendStatus(403);
+            }
             
-            jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (errRef, userRef) => {
-                if (errRef) res.sendStatus(403);
-                generateAccessToken(res, { name: userRef.name, id: userRef.id });
-                req.user = userRef;
-                next();
-            })
         } else {
             req.user = user;
             next();

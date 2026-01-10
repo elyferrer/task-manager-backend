@@ -2,8 +2,8 @@ const Task = require('../models/task');
 
 exports.get = async (req, res) => {
     const user = req.user;
-    const tasks = await Task.find({ created_by: user.id });
-
+    const tasks = await Task.find({ created_by: user.id }).sort({ end_date: -1 });
+    
     res.json(tasks);
 };
 
@@ -25,7 +25,7 @@ exports.create = async (req, res) => {
         res.status(201).json(newTask);
     } catch (error) {
         console.error(error);
-        res.status(400).json({ message: err.message });
+        res.status(400).json({ message: error.message });
     }
 };
 
@@ -37,16 +37,15 @@ exports.update = async (req, res) => {
         const validateTask = await Task.findOne({ _id: taskId, created_by: userId });
         
         if (validateTask) {
-            const updateResult = await Task.updateOne(
+            const updateResult = await Task.findOneAndUpdate(
                 { _id: taskId },
-                { $set: req.body }
+                { $set: req.body },
+                { new: true }
             );
-
-            if (updateResult.modifiedCount === 0) {
-                return res.status(404).send('No changes were made');
+            
+            if (updateResult) {
+                return res.status(200).json(updateResult);
             }
-
-            res.status(200).json({ message: 'Task updated successfully' });
         }
 
         return res.status(404).send('Task not found');
@@ -65,11 +64,9 @@ exports.delete = async (req, res) => {
         if (validateTask) {
             const deletedTask = await Task.findByIdAndDelete(taskId);
 
-            if (!deletedTask) {
-                return res.status(404).json({ message: "Not Found" });
+            if (deletedTask) {
+                return res.status(200).json(validateTask);
             }
-
-            res.status(200).json(validateTask);
         }
 
         res.status(404).json({ message: 'Task not found' });

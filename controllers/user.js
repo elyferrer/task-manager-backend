@@ -35,10 +35,10 @@ exports.login = async (req, res) => {
         const accessToken = accessTokenUtil.generateAccessToken(res, user);
         const refreshToken = refreshTokenUtil.generateRefreshToken(res, user);
         
-        res.json({ username });
+        res.status(200).json({ username });
+    } else {
+        res.status(404).json({ message: "User not found" });
     }
-
-    res.status(404).json({ message: "User not found" });
 };
 
 exports.generateNewToken = async (req, res) => {
