@@ -12,13 +12,14 @@ const app = express();
 
 const PORT = process.env.PORT;
 const F_PORT = process.env.FRONT_END_PORT;
+const F_LINK = process.env.FRONT_END_LINK;
 const CONN = process.env.MONGO_URI;
 
 app.use(express.json());
 app.use(cookieParser());
 
 app.use(cors({
-    origin: `http://localhost:${F_PORT}`,
+    origin: `${F_LINK}`,
     credentials: true,
 }));
 
